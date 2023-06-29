@@ -1,6 +1,6 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { ImageGallery } from './ImageGallery/ImageGallery';
-import { Searchbar } from './Searchbar/Searchbar';
+import { SearchBar, } from './Searchbar/Searchbar';
 import { getIMG } from './getIMG/getIMG';
 import { Loader } from './Loader/Loader';
 import { ErrorCard } from './Error/Error';
@@ -14,96 +14,74 @@ const STATUS = {
   REJECTED: 'rejected',
 };
 
-export class App extends Component {
-  state = {
-    textContext: '',
-    imgs: [],
-    status: STATUS.IDLE,
-    error: null,
-    currentPage: 1,
-    totalPage: 0,
-    showModal: false,
-    largeImageURL: null,
-  };
+export const App = ()=> {
 
-  componentDidMount() {}
+  const [textContext, setTextContext] = useState('');
+  const [imgs, setImgs] = useState([]);
+  const [status, setStatus] = useState(STATUS.IDLE);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState(null);
 
-  async componentDidUpdate(_, prevState) {
-    const { textContext, currentPage } = this.state;
-    if (
-      prevState.textContext !== textContext ||
-      prevState.currentPage !== currentPage
-    ) {
-      await this.fetchIMG();
-    }
-  }
+  useEffect(()=>{
+if (textContext === '') return;
 
-  fetchIMG = async () => {
-    this.setState({ status: STATUS.PENDING });
-    try {
-      const { textContext, currentPage } = this.state;
+const fetchIMG = async () => {
+  setStatus(STATUS.PENDING)
+  try {
+    const data = await getIMG(textContext, currentPage);
+    if (data.hits.length === 0) {
+      setStatus(STATUS.REJECTED)
+      throw new Error('No matches found');
+    } else {
       const data = await getIMG(textContext, currentPage);
-     
-      //  await this.setState({ imgs: data.hits });
-
-      if (data.hits.length === 0) {
-        throw new Error('No matches found');
-      } else {
-        // const normalizedImages = data.hits.map(({ id, tags, webformatURL, largeImageURL }) => {
-        //   return { id, tags, webformatURL, largeImageURL };
-        // });
-        const data = await getIMG(textContext, currentPage);
-        await this.setState((prevState) => ({
-          imgs: [...prevState.imgs, ...data.hits],
-          status: STATUS.RESOLVED,
-          totalPage: Math.ceil(data.totalHits / 12),
-        }));
-      }
-    } catch (error) {
-      this.setState({ error: error.message, status: STATUS.REJECTED });
-    } finally {
-      this.setState({ status: STATUS.RESOLVED });
+      setImgs(prevImgs=>{return[...prevImgs, ...data.hits]});
+      setStatus(STATUS.RESOLVED)
+      setTotalPages(Math.ceil(data.totalHits / 12))
     }
-  };
+  } catch (error) {
+    setError(error.message)
+    setStatus(STATUS.REJECTED)
+  } finally {
+    
+  }
+  
+}
+fetchIMG(); 
 
-  handelTextContext = textContext => {
-    this.setState({ textContext, imgs: [], currentPage: 1 });
-  };
+}, [textContext,currentPage])
 
-  handleLoardMore = () => {
-   
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
-  };
 
-  onOpenModal = largeUrl => {
-    this.toggleModal();
-    this.setState({ largeImageURL: largeUrl });
-  };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
+const handelTextContext = textContext => {
+  setTextContext(textContext)
+  setImgs([])
+  setCurrentPage(1)
+};
 
-  render() {
-    const {
-      imgs,
-      error,
-      status,
-      currentPage,
-      totalPage,
-      textContext,
-      showModal,
-      largeImageURL,
-    } = this.state;
-    const loading = status === STATUS.PENDING;
+const handleLoardMore = () => {
+ setCurrentPage(prevCurrent=>{return prevCurrent + 1})
+};
+
+const onOpenModal = largeUrl => {
+ toggleModal();
+ setLargeImageURL(largeUrl)
+};
+
+const toggleModal = () => {
+  setShowModal(!showModal)
+}
+
+const loading = status === STATUS.PENDING;
     const buttonSeeLoardMore =
-      imgs.length > 0 && currentPage !== totalPage && !loading;
+      imgs.length > 0 && currentPage !== totalPages && !loading;
+
 
     return (
       <>
-        <Searchbar handelTextContext={this.handelTextContext} />
+        <SearchBar handelTextContext={handelTextContext} />
 
         {status === STATUS.PENDING && <Loader />}
 
@@ -111,7 +89,7 @@ export class App extends Component {
           <ImageGallery
             textContext={textContext}
             imgs={imgs}
-            onOpenModal={this.onOpenModal}
+            onOpenModal={onOpenModal}
           />
     
 
@@ -119,7 +97,7 @@ export class App extends Component {
           <ButtonLoardMore
             type="button"
             disabled={status === STATUS.PENDING ? true : false}
-           onClick={this.handleLoardMore}
+           onClick={handleLoardMore}
           >
             {status === STATUS.PENDING ? 'Loading...' : 'Loard More'}
           </ButtonLoardMore>
@@ -129,12 +107,13 @@ export class App extends Component {
           <ModalIMG
             largeImageURL={largeImageURL}
             tag={imgs.tags}
-            closeModal={this.toggleModal}
+            closeModal={toggleModal}
           />
         )}
 
         {status === STATUS.REJECTED && <ErrorCard>{error}</ErrorCard>}
       </>
     );
-  }
-}
+
+        }
+

@@ -1,29 +1,24 @@
-import { Component } from 'react';
+import {  useState } from 'react';
 import { ButtonInput, ButtonSearch, DivSearch, FormSearch, InputSearch } from './Searchbar.styled';
 
 import { BsSearch } from 'react-icons/bs';
 
 
-export class Searchbar extends Component {
-  state = {
-    value: '',
+export const SearchBar = ({handelTextContext})=>{
+  const [value, setValue]=useState('');
+
+ const handelChange = (event) => {
+  setValue(event.target.value);
   };
 
-
-  handelChange = (e) => {
-    this.setState({ value: e.target.value });
+  const handelSubmit = (event) => {
+   event.preventDefault();
+  handelTextContext(value);
   };
 
-  handelSubmit = (e) => {
-   e.preventDefault();
-  this.props.handelTextContext(this.state.value)
-  
-  };
+  return (<DivSearch>
 
-  render(){
-    return (<DivSearch>
-
-    <FormSearch onSubmit={this.handelSubmit}>
+    <FormSearch onSubmit={handelSubmit}>
       <ButtonSearch type="submit">
         <ButtonInput >Search</ButtonInput>
         <BsSearch />
@@ -34,10 +29,11 @@ export class Searchbar extends Component {
         autocomplete="off"
         autoFocus
         placeholder="Search images and photos"
-        onChange={this.handelChange} value={this.state.value}
+        onChange={handelChange} value={value}
       />
     </FormSearch>
 
     </DivSearch>)
-  };
+  
 }
+
