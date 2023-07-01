@@ -3,16 +3,21 @@ import { Modal, Overlay } from './Modal.styled';
 
 
 export const ModalIMG = ({closeModal, largeImageURL, tag}) => {
+
+  
   useEffect(()=>{
+
+    const handleKeyDown = event => {
+      if (event.code === 'Escape') {
+        closeModal();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     return ()=> window.removeEventListener('keydown', handleKeyDown);
-  })
+  }, [closeModal])
 
- const handleKeyDown = event => {
-    if (event.code === 'Escape') {
-      closeModal();
-    }
-  };
+
 
   const handleBackdropClick = event => {
     if (event.currentTarget === event.target) {
